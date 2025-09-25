@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Estratégias para TOD - DSM-5-TR</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Importa Three.js e OrbitControls via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    // ====== Cena, câmera e renderizador ======
+    const scene = new THREE.Scene();
+
+    // Fundo em gradiente simulando calma
+    const canvasGradient = document.createElement("canvas");
+    canvasGradient.width = 16;
+    canvasGradient.height = 256;
+    const ctx = canvasGradient.getContext("2d");
+    const gradient = ctx.createLinearGradient(0,0,0,256);
+    gradient.addColorStop(0, "#a7d8ff");
+    gradient.addColorStop(1, "#e0f7ff");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,16,256);
+    const bgTexture = new THREE.CanvasTexture(canvasGradient);
+    scene.background = bgTexture;
+
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 2, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // ====== Luzes ======
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+
+    // ====== Família (formas básicas) ======
+    function criarPessoa(cor) {
+      const group = new THREE.Group();
+      const material = new THREE.MeshStandardMaterial({ color: cor });
+
+      const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 1.5, 32), material);
+      corpo.position.y = 0.75;
+
+      const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), material);
+      cabeca.position.y = 1.7;
+
+      group.add(corpo);
+      group.add(cabeca);
+      return group;
+    }
+
+    const pai = criarPessoa(0x3366ff);
+    pai.position.x = -1.5;
+
+    const mae = criarPessoa(0xff6699);
+    mae.position.x = 1.5;
+
+    const crianca = criarPessoa(0xffff66);
+    crianca.scale.set(0.7, 0.7, 0.7);
+    crianca.position.y = 0.3;
+
+    const familia = new THREE.Group();
+    familia.add(pai);
+    familia.add(mae);
+    familia.add(crianca);
+    scene.add(familia);
+
+    // ====== Cérebro estilizado ======
+    const cerebro = new THREE.Group();
+    const lobos = [];
+    for (let i = 0; i < 5; i++) {
+      const material = new THREE.MeshStandardMaterial({ color: 0xffb6c1 });
+      const esfera = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), material);
+      esfera.position.x = Math.sin((i / 5) * Math.PI * 2) * 0.6;
+      esfera.position.y = Math.cos((i / 5) * Math.PI * 2) * 0.3;
+      cerebro.add(esfera);
+      lobos.push(esfera);
+    }
+    cerebro.position.set(0, 2.5, 0);
+    scene.add(cerebro);
+
+    // ====== Setas/estratégias ======
+    function criarEstrategia(texto, cor) {
+      const group = new THREE.Group();
+      const geo = new THREE.BoxGeometry(0.3, 0.3, 1.5);
+      const mat = new THREE.MeshStandardMaterial({ color: cor });
+      const seta = new THREE.Mesh(geo, mat);
+
+      const loader = new THREE.FontLoader();
+      loader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", function(font) {
+        const textGeo = new THREE.TextGeometry(texto, {
+          font: font,
+          size: 0.25,
+          height: 0.05
+        });
+        const textMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const textMesh = new THREE.Mesh(textGeo, textMat);
+        textMesh.position.set(-1, 0.5, 0);
+        group.add(textMesh);
+      });
+
+      group.add(seta);
+      return group;
+    }
+
+    const estrategia1 = criarEstrategia("Treinamento Parental", 0x66ccff);
+    estrategia1.position.set(-4, 1, 0);
+
+    const estrategia2 = criarEstrategia("Resolução de Problemas", 0x99cc33);
+    estrategia2.position.set(4, 1, 0);
+
+    const estrategia3 = criarEstrategia("Limites Claros", 0xff9933);
+    estrategia3.position.set(0, 1, -4);
+
+    scene.add(estrategia1);
+    scene.add(estrategia2);
+    scene.add(estrategia3);
+
+    // ====== Texto no topo ======
+    const fontLoader = new THREE.FontLoader();
+    fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", function(font) {
+      const tituloGeo = new THREE.TextGeometry("Estratégias para TOD (DSM-5-TR)", {
+        font: font,
+        size: 0.4,
+        height: 0.05
+      });
+      const subtituloGeo = new THREE.TextGeometry(
+        "Reduza irritabilidade e conflitos com intervenções baseadas em evidências",
+        { font: font, size: 0.2, height: 0.05 }
+      );
+
+      const tituloMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const subtituloMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+      const tituloMesh = new THREE.Mesh(tituloGeo, tituloMat);
+      tituloMesh.position.set(-4, 5, 0);
+
+      const subtituloMesh = new THREE.Mesh(subtituloGeo, subtituloMat);
+      subtituloMesh.position.set(-6, 4.5, 0);
+
+      scene.add(tituloMesh);
+      scene.add(subtituloMesh);
+    });
+
+    // ====== Referência no rodapé ======
+    fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", function(font) {
+      const refGeo = new THREE.TextGeometry("Baseado em APA (2022) e AACAP (2019)", {
+        font: font,
+        size: 0.15,
+        height: 0.02
+      });
+      const refMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const refMesh = new THREE.Mesh(refGeo, refMat);
+      refMesh.position.set(-3, -0.5, 0);
+      scene.add(refMesh);
+    });
+
+    // ====== Animação ======
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Cérebro gira devagar
+      cerebro.rotation.y += 0.01;
+
+      // Família pisca (escala leve)
+      const scale = 1 + 0.05 * Math.sin(Date.now() * 0.002);
+      familia.scale.set(scale, scale, scale);
+
+      // Estratégias pulsam
+      estrategia1.position.y = 1 + 0.2 * Math.sin(Date.now() * 0.002);
+      estrategia2.position.y = 1 + 0.2 * Math.cos(Date.now() * 0.002);
+      estrategia3.position.y = 1 + 0.2 * Math.sin(Date.now() * 0.002 + 2);
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Responsividade
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
